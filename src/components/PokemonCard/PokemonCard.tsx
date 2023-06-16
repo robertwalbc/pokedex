@@ -1,16 +1,17 @@
 import React from "react";
+import { Link } from "react-router-dom";
 import { Title, Container, Image, CardContent } from "./PokemonCard.styles.ts";
 
 function PokemonCard( {pokeImage, pokeName} ) {
   return (
-    <div>
+    <Link to={`/pokemon/${pokeName}`}>
       <Container>
         <CardContent>
           <Image src={pokeImage}/>
           <Title>{pokeName}</Title>
         </CardContent>
       </Container>
-    </div>
+    </Link>
 )};
 
 export default PokemonCard;
