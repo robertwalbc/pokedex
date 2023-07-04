@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { getPokemons, getPokemon } from '../../api/services.ts';
+import { getAllPokemon, getPokemon, getColor, getGeneration, getRegion, getHabitat, getTypes, getEggGroup } from '../../api/services.ts';
 import PokemonCard from '../../components/PokemonCard/PokemonCard.tsx';
-import { CardGrid, ButtonContainer, Button, Pagination } from './home.styles.ts';
+import { CardGrid, ButtonContainer, Button, FilterGrid } from './home.styles.ts';
+import { Filters } from '../../components/Filters/filters.tsx';
 
 function Home() {
   const [loading, setLoading] = useState(false);
@@ -10,25 +11,25 @@ function Home() {
   const [previousPageUrl, setPreviousPageUrl] = useState('');
   const [nextPageUrl, setNextPageUrl] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
+  const [calOffset, setCalOffset] = useState(0);
+  const [calLimit, setCalLimit] = useState(20);
+  //info de los dropdowns
+  const [color, setColor] = useState([]);
+  const [type, setType] = useState([]);
+  const [generation, setGeneration] = useState([]);
+  const [region, setRegion] = useState([]);
+  const [habitat, setHabitat] = useState([]);
+  const [eggGroup, setEggGroup] = useState([]);
 
-
-
-  const callPokemons = async (url) => {
+  const callAllPokemon = async (limit, offset) => {
     try {
         setLoading(true);
-        const res = await getPokemons(url);
+        setCalOffset(offset + limit);
+        const res = await getAllPokemon(limit, offset);
         setPokemons(res?.data?.results);
         setPreviousPageUrl(res?.data?.previous);
         setNextPageUrl(res?.data?.next);
         setLoading(false);
-
-        // Calculate the current page number from the URL
-        const params = new URLSearchParams(new URL(url).search);
-        const offset = parseInt(params.get("offset"), 10);
-        const limit = parseInt(params.get("limit"), 10);
-        const currentPage = offset / limit + 1;
-        setCurrentPage(currentPage);
-
         return res;
     } catch (error) {
         console.log(error);
@@ -50,8 +51,100 @@ function Home() {
     }
   }
 
+  const callType = async () => {
+    try {
+      setLoading(true);
+      const res = await getTypes();
+      const typeName = res?.data?.results?.map(tp => tp?.name);
+      setType(typeName);
+      setLoading(false);
+
+    } catch (error) {
+      console.log(error);
+      setLoading(false);
+    }
+  }
+
+  const callHabitat = async () => {
+    try {
+      setLoading(true);
+      const res = await getHabitat();
+      const habitatName = res?.data?.results?.map(hb => hb?.name);
+      setHabitat(habitatName);
+      setLoading(false);
+    } catch (error) {
+      console.log(error);
+      setLoading(false);
+    }
+  }
+
+  const callRegion = async () => {
+    try {
+      setLoading(true);
+      const res = await getRegion();
+      const regionName = res?.data?.results?.map(rg => rg?.name);
+      setRegion(regionName);
+      setLoading(false);
+    } catch (error) {
+      console.log(error);
+      setLoading(false);
+    }
+  }
+
+  const callColor = async () => {
+    try {
+      setLoading(true);
+      const res = await getColor();
+      const colorName = res?.data?.results?.map(cl => cl?.name);
+      setColor(colorName);
+      setLoading(false);
+    } catch (error) {
+      console.log(error);
+      setLoading(false);
+    }
+  }
+
+  const callGeneration = async () => {
+    try {
+      setLoading(true);
+      const res = await getGeneration();
+      const generationName = res?.data?.results?.map(gn => gn?.name);
+      setGeneration(generationName);
+      setLoading(false);
+    } catch (error) {
+      console.log(error);
+      setLoading(false);
+    }
+  }
+
+  const callEggGroup =async () => {
+    try {
+      const res = await getEggGroup();
+      const eggGroupName = res?.data?.results?.map(eg => eg?.name);
+      setEggGroup(eggGroupName);
+      setLoading(false);
+    } catch (error) {
+      console.log(error);
+      setLoading(false);
+    }
+  }
+
+  const handlePreviousPage = () => {
+      if (previousPageUrl) {
+        callAllPokemon(20, calOffset - 40);
+        setCurrentPage(currentPage - 1);
+      }
+    };
+
+    const handleNextPage = () => {
+      if (nextPageUrl) {
+        callAllPokemon(20, calOffset);
+        setCurrentPage(currentPage + 1);
+      }
+    };
+
   useEffect(() => {
-    callPokemons(); // 
+    callAllPokemon(calLimit, calOffset); // 
   }, []); 
 
   useEffect(() => {
@@ -60,32 +153,46 @@ function Home() {
         }
   }, [pokemons]);
 
-  const handlePreviousPage = () => {
-    if (previousPageUrl) {
-      callPokemons(previousPageUrl)
-    }
-  };
+  useEffect(() => {
+      callType();
+      callHabitat();
+      callRegion();
+      callColor();
+      callGeneration();
+      callEggGroup();
+  }, []);
 
-  const handleNextPage = () => {
-    if (nextPageUrl) {
-      callPokemons(nextPageUrl)
-    }
-  };
-
-  const handlePageClick = (page) => {
-    const offset = (page - 1) * 20; // Adjust the limit (20) based on your actual API pagination
-    const url = `https://pokeapi.co/api/v2/pokemon/?offset=${offset}&limit=20`; // Adjust the URL format based on your API
-  
-    callPokemons(url);
-  };
-  
-  const totalPages = Math.ceil(pokemons.length / 20); // Adjust the limit (20) based on your actual API pagination
-
-  // Generate an array of page numbers from 1 to totalPages
-  const pageNumbers = Array.from({ length: totalPages }, (_, index) => index + 1);
+  console.log('type', type);
 
     return (
       <>
+        <h1>Filters</h1>
+        <FilterGrid>
+          <Filters
+            filterName={'Habitat'}
+            items={habitat}
+          />
+          <Filters
+            filterName={'Type'}
+            items={type}
+          />
+          <Filters
+            filterName={'Region'}
+            items={region}
+          />
+          <Filters
+            filterName={'Color'}
+            items={color}
+          />
+          <Filters
+            filterName={'Generation'}
+            items={generation}
+          />
+          <Filters
+            filterName={'Egg Group'}
+            items={eggGroup}
+          />
+        </FilterGrid>
         <CardGrid>
           {loading ? <p>loading...</p> :
           pokemonData?.map(poke => 
@@ -102,17 +209,6 @@ function Home() {
           <Button onClick={handleNextPage} disabled={!nextPageUrl}>
             Next Page
           </Button>
-          <Pagination> 
-            {pageNumbers.map((page) => (
-              <Button
-                key={page}
-                onClick={() => handlePageClick(page)}
-                disabled={page === currentPage}
-              >
-                {page}
-              </Button>
-            ))}
-          </Pagination>
         </ButtonContainer>
       </>
     );

@@ -29,8 +29,10 @@ export const Button = styled.button`
   }
 `;
 
-export const Pagination = styled.div`
+export const FilterGrid = styled.div`
   display: flex;
+  flex-wrap: wrap;
   justify-content: center;
-  margin-top: 20px;
+  gap: 16px;
+  margin-top: 16px auto;
 `;

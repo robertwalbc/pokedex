@@ -7,7 +7,7 @@ export const PokemonDetail = () => {
   const [loading, setLoading] = useState();
   const [pokemonData, setPokemonData] = useState();
 
-  const fetchPokemonData =async () => {
+  const fetchPokemonData = async () => {
     try {
       setLoading(true);
       const res = await getPokemon(name);

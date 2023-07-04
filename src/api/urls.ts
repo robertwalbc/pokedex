@@ -1,4 +1,9 @@
 export const pokemonURLS = {
   pokemon: "/pokemon",
-  pokemonSpecies: "/pokemon-species"
+  habitat: "/pokemon-habitat",
+  types: "/type",
+  region: "/region",
+  color: "/pokemon-color",
+  generation: "/generation",
+  eggGroup: "/egg-group",
 }
