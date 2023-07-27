@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { getAllPokemon, getPokemon, getColor, getGeneration, getRegion, getHabitat, getTypes, getEggGroup } from '../../api/services.ts';
+import { getAllPokemon, getPokemon, getColor, getGeneration, getRegion, getHabitat, getTypes, getEggGroup, getRegionPokemon } from '../../api/services.ts';
 import PokemonCard from '../../components/PokemonCard/PokemonCard.tsx';
 import { CardGrid, ButtonContainer, Button, FilterGrid } from './home.styles.ts';
 import { Filters } from '../../components/Filters/filters.tsx';
@@ -20,6 +20,15 @@ function Home() {
   const [region, setRegion] = useState([]);
   const [habitat, setHabitat] = useState([]);
   const [eggGroup, setEggGroup] = useState([]);
+  //estados para los filtros seleccionados
+  const [selectedHabitat, setSelectedHabitat] = useState('');
+  const [selectedType, setSelectedType] = useState('');
+  const [selectedRegion, setSelectedRegion] = useState('');
+  const [selectedColor, setSelectedColor] = useState('');
+  const [selectedGeneration, setSelectedGeneration] = useState('');
+  const [selectedEggGroup, setSelectedEggGroup] = useState('');
+  //Estado para los Pokemon filtrados
+  const [filteredPokemonData, setFilteredPokemonData] = useState([]);
 
   const callAllPokemon = async (limit, offset) => {
     try {
@@ -51,83 +60,205 @@ function Home() {
     }
   }
 
-  const callType = async () => {
+  const fetchFiltersData = async () => {
     try {
       setLoading(true);
-      const res = await getTypes();
-      const typeName = res?.data?.results?.map(tp => tp?.name);
-      setType(typeName);
-      setLoading(false);
+      
+      // Llamadas a las funciones para obtener los datos de los filtros
+      const typesRes = await getTypes();
+      const habitatRes = await getHabitat();
+      const regionRes = await getRegion();
+      const colorRes = await getColor();
+      const generationRes = await getGeneration();
+      const eggGroupRes = await getEggGroup();
 
+      // Valores de los dropdown
+      const types = typesRes?.data?.results?.map(tp => tp?.name);
+      const habitats = habitatRes?.data?.results?.map(hb => hb?.name);
+      const regions = regionRes?.data?.results?.map(rg => rg?.name);
+      const colors = colorRes?.data?.results?.map(cl => cl?.name);
+      const generations = generationRes?.data?.results?.map(gn => gn?.name);
+      const eggGroups = eggGroupRes?.data?.results?.map(eg => eg?.name);
+
+      // Actualización de los estados correspondientes
+      setType(types);
+      setHabitat(habitats);
+      setRegion(regions);
+      setColor(colors);
+      setGeneration(generations);
+      setEggGroup(eggGroups);
+
+      setLoading(false);
     } catch (error) {
       console.log(error);
       setLoading(false);
     }
+  };
+
+  const getPokemonByHabitat = async (ht) => {
+    try {
+      const res = await getHabitat(ht);
+      return res?.data?.pokemon_species?.map(h => h?.name);
+    } catch (error) {
+      console.log(error);
+      throw new Error('Error al obtener los Pokémon por hábitat');
+    }
+  };
+
+  const getPokemonByType = async (te) => {
+    try {
+      const res = await getTypes(te);
+      return res?.data?.pokemon?.map((t) => t?.pokemon?.name);
+    } catch (error) {
+      console.log(error);
+      throw new Error('Error al obtener los Pokémon por tipo');
+    }
   }
 
-  const callHabitat = async () => {
+  const getPokemonByRegion = async (rn) => {
+    try {
+      const res = await getRegionPokemon(rn);
+      return res?.data?.pokemon_entries?.map((entry) => entry?.pokemon_species?.name);
+    } catch (error) {
+      console.log(error);
+      throw new Error('Error al obtener los Pokémon por region');
+    }
+  }
+
+  const getPokemonByColor = async (cr) => {
+    try {
+      const res = await getColor(cr);
+      return res?.data?.pokemon_species?.map(c => c?.name);
+    } catch (error) {
+      console.log(error);
+      throw new Error('Error al obtener los Pokémon por color');
+    }
+  }
+
+  const getPokemonByGeneration = async (gn) => {
+    try {
+      const res = await getGeneration(gn);
+      return res?.data?.pokemon_species?.map(g => g?.name);
+    } catch (error) {
+      console.log(error);
+      throw new Error('Error al obtener los Pokémon por generación');
+    }
+  }
+
+  const getPokemonByEggGroup = async (eg) => {
+    try {
+      const res = await getEggGroup(eg);
+      return res?.data?.pokemon_species?.map(ep => ep?.name);
+    } catch (error) {
+      console.log(error);
+      throw new Error('Error al obtener los Pokémon por Egg Group');
+    }
+  }
+
+  const fetchAllPokemonNames = async () => {
+    try {
+      const allPokemonNames = [];
+      let offset = 0;
+      const limit = 100;
+  
+      while (true) {
+        const res = await getAllPokemon(limit, offset);
+        const pokemonNames = res?.data?.results?.map(pokemon => pokemon.name);
+        allPokemonNames.push(...pokemonNames);
+  
+        if (!res?.data?.next) {
+          break;
+        }
+  
+        offset += limit;
+      }
+      
+      return allPokemonNames;
+    } catch (error) {
+      console.log(error);
+      throw new Error('Error al obtener los nombres de los Pokémon');
+    }
+  };
+
+  const filterPokemons = async () => {
     try {
       setLoading(true);
-      const res = await getHabitat();
-      const habitatName = res?.data?.results?.map(hb => hb?.name);
-      setHabitat(habitatName);
+  
+      const allPokemonNames = await fetchAllPokemonNames();
+  
+      let filteredData = [...allPokemonNames];
+  
+      if (selectedHabitat) {
+        const pokemonByHabitat = await getPokemonByHabitat(selectedHabitat);
+        filteredData = filteredData?.filter(name => pokemonByHabitat?.includes(name));
+      }
+  
+      if (selectedType) {
+        console.log('selectedType', selectedType);
+        const pokemonByType = await getPokemonByType(selectedType);
+        filteredData = filteredData?.filter(name => pokemonByType?.includes(name));
+        console.log('pokemonByType', pokemonByType);
+
+      }
+      
+      if (selectedRegion) {
+        console.log('selected region:', selectedRegion);
+
+        let updatedRegion = selectedRegion;
+
+        if(selectedRegion === 'johto') {
+          updatedRegion = 'updated-johto';
+        } else if(selectedRegion === 'sinnoh') {
+          updatedRegion = 'extended-sinnoh';
+        } else if(selectedRegion === 'unova') {
+          updatedRegion = 'updated-unova';
+        } else if(selectedRegion === 'kalos') {
+          updatedRegion = 'kalos-central';
+        } else if(selectedRegion === 'alola') {
+          updatedRegion = 'updated-alola';
+        }
+        console.log('Updated Region:', updatedRegion);
+
+        const pokemonByRegion = await getPokemonByRegion(updatedRegion);
+        console.log('Pokemon By Region:', pokemonByRegion);
+        filteredData = filteredData?.filter(name => pokemonByRegion?.includes(name));
+        console.log('Filtered Data:', filteredData);
+      }
+
+      if (selectedColor) {
+        const pokemonByColor = await getPokemonByColor(selectedColor);
+        filteredData = filteredData?.filter(name => pokemonByColor?.includes(name));
+      }
+
+      if (selectedGeneration) {
+        const pokemonByGeneration = await getPokemonByGeneration(selectedGeneration);
+        filteredData = filteredData?.filter(name => pokemonByGeneration?.includes(name));
+      }
+
+      if (selectedEggGroup) {
+        const pokemonByEggGroup = await getPokemonByEggGroup(selectedEggGroup);
+        filteredData = filteredData?.filter(name => pokemonByEggGroup?.includes(name));
+      }
+      //console.log('filteredData', filteredData);
+      setFilteredPokemonData(filteredData);
       setLoading(false);
     } catch (error) {
       console.log(error);
       setLoading(false);
     }
-  }
+  };
 
-  const callRegion = async () => {
+  {/* const fetchFilteredPokemonData = async () => {
     try {
       setLoading(true);
-      const res = await getRegion();
-      const regionName = res?.data?.results?.map(rg => rg?.name);
-      setRegion(regionName);
-      setLoading(false);
-    } catch (error) {
-      console.log(error);
-      setLoading(false);
-    }
-  }
+      
 
-  const callColor = async () => {
-    try {
-      setLoading(true);
-      const res = await getColor();
-      const colorName = res?.data?.results?.map(cl => cl?.name);
-      setColor(colorName);
       setLoading(false);
     } catch (error) {
       console.log(error);
       setLoading(false);
     }
-  }
-
-  const callGeneration = async () => {
-    try {
-      setLoading(true);
-      const res = await getGeneration();
-      const generationName = res?.data?.results?.map(gn => gn?.name);
-      setGeneration(generationName);
-      setLoading(false);
-    } catch (error) {
-      console.log(error);
-      setLoading(false);
-    }
-  }
-
-  const callEggGroup =async () => {
-    try {
-      const res = await getEggGroup();
-      const eggGroupName = res?.data?.results?.map(eg => eg?.name);
-      setEggGroup(eggGroupName);
-      setLoading(false);
-    } catch (error) {
-      console.log(error);
-      setLoading(false);
-    }
-  }
+  } */}
 
   const handlePreviousPage = () => {
       if (previousPageUrl) {
@@ -143,6 +274,30 @@ function Home() {
       }
     };
 
+    const handleHabitatSelect = (selectedHabitat) => {
+      setSelectedHabitat(selectedHabitat);
+    };
+  
+    const handleTypeSelect = (selectedType) => {
+      setSelectedType(selectedType);
+    };
+  
+    const handleRegionSelect = (selectedRegion) => {
+      setSelectedRegion(selectedRegion);
+    };
+  
+    const handleColorSelect = (selectedColor) => {
+      setSelectedColor(selectedColor);
+    };
+  
+    const handleGenerationSelect = (selectedGeneration) => {
+      setSelectedGeneration(selectedGeneration);
+    };
+  
+    const handleEggGroupSelect = (selectedEggGroup) => {
+      setSelectedEggGroup(selectedEggGroup);
+    };
+
   useEffect(() => {
     callAllPokemon(calLimit, calOffset); // 
   }, []); 
@@ -154,15 +309,12 @@ function Home() {
   }, [pokemons]);
 
   useEffect(() => {
-      callType();
-      callHabitat();
-      callRegion();
-      callColor();
-      callGeneration();
-      callEggGroup();
+      fetchFiltersData();
   }, []);
 
-  console.log('type', type);
+  useEffect(() => {
+    filterPokemons();
+  }, [selectedHabitat, selectedType, selectedRegion, selectedColor, selectedGeneration, selectedEggGroup])
 
     return (
       <>
@@ -171,26 +323,32 @@ function Home() {
           <Filters
             filterName={'Habitat'}
             items={habitat}
+            handleFilterSelect={handleHabitatSelect}
           />
           <Filters
             filterName={'Type'}
             items={type}
+            handleFilterSelect={handleTypeSelect}
           />
           <Filters
             filterName={'Region'}
             items={region}
+            handleFilterSelect={handleRegionSelect}
           />
           <Filters
             filterName={'Color'}
             items={color}
+            handleFilterSelect={handleColorSelect}
           />
           <Filters
             filterName={'Generation'}
             items={generation}
+            handleFilterSelect={handleGenerationSelect}
           />
           <Filters
             filterName={'Egg Group'}
             items={eggGroup}
+            handleFilterSelect={handleEggGroupSelect}
           />
         </FilterGrid>
         <CardGrid>

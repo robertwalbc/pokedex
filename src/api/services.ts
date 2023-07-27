@@ -11,15 +11,17 @@ export const getPokemon = (name:string) => instance.get(`${POKEMON_API}${pokemon
 
 export const getPokemonId = (id:number) => instance.get(`${POKEMON_API}${pokemonURLS.pokemon}/${id}`);
 
-export const getHabitat = () => instance.get(`${POKEMON_API}${pokemonURLS.habitat}`);
+//calling the names for the dropdowns
+export const getHabitat = (habitat: string = '') => instance.get(`${POKEMON_API}${pokemonURLS.habitat}/${habitat}`);
 
-export const getTypes = () => instance.get(`${POKEMON_API}${pokemonURLS.types}`);
+export const getTypes = (type: string = '') => instance.get(`${POKEMON_API}${pokemonURLS.types}/${type}`);
 
 export const getRegion = () => instance.get(`${POKEMON_API}${pokemonURLS.region}`);
 
-export const getColor = () => instance.get(`${POKEMON_API}${pokemonURLS.color}`);
+export const getColor = (color: string = '') => instance.get(`${POKEMON_API}${pokemonURLS.color}/${color}`);
 
-export const getGeneration = () => instance.get(`${POKEMON_API}${pokemonURLS.generation}`);
+export const getGeneration = (generation: string = '') => instance.get(`${POKEMON_API}${pokemonURLS.generation}/${generation}`);
 
-export const getEggGroup = () => instance.get(`${POKEMON_API}${pokemonURLS.eggGroup}`);
+export const getEggGroup = (group: string = '') => instance.get(`${POKEMON_API}${pokemonURLS.eggGroup}/${group}`);
 
+export const getRegionPokemon = (region: string) => instance.get(`${POKEMON_API}${pokemonURLS.pokedex}/${region}`);

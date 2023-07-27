@@ -6,4 +6,5 @@ export const pokemonURLS = {
   color: "/pokemon-color",
   generation: "/generation",
   eggGroup: "/egg-group",
+  pokedex: "/pokedex"
 }
