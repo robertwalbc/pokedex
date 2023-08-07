@@ -10,7 +10,7 @@ function Home() {
   const [pokemonData, setPokemonData] = useState([]); // sprites, name, abilities
   const [previousPageUrl, setPreviousPageUrl] = useState('');
   const [nextPageUrl, setNextPageUrl] = useState('');
-  const [currentPage, setCurrentPage] = useState(1);
+  //const [currentPage, setCurrentPage] = useState(1);
   const [calOffset, setCalOffset] = useState(0);
   const [calLimit, setCalLimit] = useState(20);
   //info de los dropdowns
@@ -30,26 +30,32 @@ function Home() {
   //Estado para los Pokemon filtrados
   const [filteredPokemonData, setFilteredPokemonData] = useState([]);
 
-  const callAllPokemon = async (limit, offset) => {
+  //new pagination-----------------------------------
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize] = useState(20);
+  //-------------------------------------------------
+
+  const callAllPokemon = async () => {
     try {
-        setLoading(true);
-        setCalOffset(offset + limit);
-        const res = await getAllPokemon(limit, offset);
+        //setLoading(true);
+        const offset = (currentPage - 1) * pageSize;
+        const res = await getAllPokemon(pageSize, offset);
+        //setCalOffset(offset + limit);
+        //const res = await getAllPokemon(limit, offset);
         setPokemons(res?.data?.results);
-        setPreviousPageUrl(res?.data?.previous);
-        setNextPageUrl(res?.data?.next);
-        setLoading(false);
-        return res;
+        //setPreviousPageUrl(res?.data?.previous);
+        //setNextPageUrl(res?.data?.next);
+        //setLoading(false);
     } catch (error) {
         console.log(error);
-        setLoading(false);
+        //setLoading(false);
       }
   }
 
   const callPokemonName = async () => {
     try {
         setLoading(true);
-        const pokemonPromises = pokemons?.map(pk => getPokemon(pk?.name))
+        const pokemonPromises = filteredPokemonData.map(name => getPokemon(name));
         const res = await Promise.all(pokemonPromises);
         setPokemonData(res);
         setLoading(false);
@@ -62,7 +68,7 @@ function Home() {
 
   const fetchFiltersData = async () => {
     try {
-      setLoading(true);
+      //setLoading(true);
       
       // Llamadas a las funciones para obtener los datos de los filtros
       const typesRes = await getTypes();
@@ -88,10 +94,10 @@ function Home() {
       setGeneration(generations);
       setEggGroup(eggGroups);
 
-      setLoading(false);
+      //setLoading(false);
     } catch (error) {
       console.log(error);
-      setLoading(false);
+      //setLoading(false);
     }
   };
 
@@ -182,28 +188,25 @@ function Home() {
 
   const filterPokemons = async () => {
     try {
-      setLoading(true);
+      //setLoading(true);
   
       const allPokemonNames = await fetchAllPokemonNames();
   
       let filteredData = [...allPokemonNames];
+
   
-      if (selectedHabitat) {
+      if (selectedHabitat && selectedHabitat !== 'all') {
         const pokemonByHabitat = await getPokemonByHabitat(selectedHabitat);
         filteredData = filteredData?.filter(name => pokemonByHabitat?.includes(name));
+        //console.log('habitat', filteredData);
       }
   
-      if (selectedType) {
-        console.log('selectedType', selectedType);
+      if (selectedType && selectedType !== 'all') {
         const pokemonByType = await getPokemonByType(selectedType);
         filteredData = filteredData?.filter(name => pokemonByType?.includes(name));
-        console.log('pokemonByType', pokemonByType);
-
       }
       
-      if (selectedRegion) {
-        console.log('selected region:', selectedRegion);
-
+      if (selectedRegion && selectedRegion !== 'all') {
         let updatedRegion = selectedRegion;
 
         if(selectedRegion === 'johto') {
@@ -217,50 +220,37 @@ function Home() {
         } else if(selectedRegion === 'alola') {
           updatedRegion = 'updated-alola';
         }
-        console.log('Updated Region:', updatedRegion);
-
         const pokemonByRegion = await getPokemonByRegion(updatedRegion);
-        console.log('Pokemon By Region:', pokemonByRegion);
         filteredData = filteredData?.filter(name => pokemonByRegion?.includes(name));
-        console.log('Filtered Data:', filteredData);
       }
 
-      if (selectedColor) {
+      if (selectedColor && selectedColor !== 'all') {
         const pokemonByColor = await getPokemonByColor(selectedColor);
         filteredData = filteredData?.filter(name => pokemonByColor?.includes(name));
       }
 
-      if (selectedGeneration) {
+      if (selectedGeneration && selectedGeneration !== 'all') {
         const pokemonByGeneration = await getPokemonByGeneration(selectedGeneration);
         filteredData = filteredData?.filter(name => pokemonByGeneration?.includes(name));
       }
 
-      if (selectedEggGroup) {
+      if (selectedEggGroup && selectedEggGroup !== 'all') {
         const pokemonByEggGroup = await getPokemonByEggGroup(selectedEggGroup);
         filteredData = filteredData?.filter(name => pokemonByEggGroup?.includes(name));
       }
-      //console.log('filteredData', filteredData);
+
       setFilteredPokemonData(filteredData);
-      setLoading(false);
+      setCurrentPage(1);
+
+      //setLoading(false);
     } catch (error) {
       console.log(error);
-      setLoading(false);
+      //setLoading(false);
     }
   };
 
-  {/* const fetchFilteredPokemonData = async () => {
-    try {
-      setLoading(true);
-      
 
-      setLoading(false);
-    } catch (error) {
-      console.log(error);
-      setLoading(false);
-    }
-  } */}
-
-  const handlePreviousPage = () => {
+  {/*const handlePreviousPage = () => {
       if (previousPageUrl) {
         callAllPokemon(20, calOffset - 40);
         setCurrentPage(currentPage - 1);
@@ -272,7 +262,26 @@ function Home() {
         callAllPokemon(20, calOffset);
         setCurrentPage(currentPage + 1);
       }
+    }; */}
+
+    const totalPages = Math.ceil(filteredPokemonData.length / pageSize);
+
+    const handlePreviousPage = () => {
+      if (currentPage > 1) {
+        setCurrentPage(prevPage => prevPage - 1);
+      }
     };
+    
+    const handleNextPage = () => {
+      if (currentPage < totalPages) {
+        setCurrentPage(prevPage => prevPage + 1);
+      }
+    };
+
+    const startIndex = (currentPage - 1) * pageSize;
+    const endIndex = startIndex + pageSize;
+    const currentPokemonData = filteredPokemonData.slice(startIndex, endIndex);
+    
 
     const handleHabitatSelect = (selectedHabitat) => {
       setSelectedHabitat(selectedHabitat);
@@ -303,10 +312,10 @@ function Home() {
   }, []); 
 
   useEffect(() => {
-    if(pokemons?.length > 0) {
+    if(filteredPokemonData?.length > 0) {
           callPokemonName();
         }
-  }, [pokemons]);
+  }, [filteredPokemonData]);
 
   useEffect(() => {
       fetchFiltersData();
@@ -314,7 +323,9 @@ function Home() {
 
   useEffect(() => {
     filterPokemons();
-  }, [selectedHabitat, selectedType, selectedRegion, selectedColor, selectedGeneration, selectedEggGroup])
+  }, [selectedHabitat, selectedType, selectedRegion, selectedColor, selectedGeneration, selectedEggGroup]);
+  
+  //console.log('filters in render', filteredPokemonData);
 
     return (
       <>
@@ -353,18 +364,18 @@ function Home() {
         </FilterGrid>
         <CardGrid>
           {loading ? <p>loading...</p> :
-          pokemonData?.map(poke => 
+          currentPokemonData?.map(poke => 
           <PokemonCard
-          key={poke?.data?.name}
-          pokeImage={poke?.data?.sprites?.front_default}
-          pokeName={poke?.data?.name}
+          key={poke}
+          //pokeImage={poke?.data?.sprites?.front_default}
+          pokeName={poke}
           />)}
         </CardGrid>
         <ButtonContainer>
-          <Button onClick={handlePreviousPage} disabled={!previousPageUrl}>
+          <Button onClick={handlePreviousPage} disabled={currentPage === 1}>
             Previous Page
           </Button>
-          <Button onClick={handleNextPage} disabled={!nextPageUrl}>
+          <Button onClick={handleNextPage} disabled={currentPage === totalPages}>
             Next Page
           </Button>
         </ButtonContainer>
